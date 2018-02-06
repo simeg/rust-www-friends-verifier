@@ -1,0 +1,1 @@
+# rust-www-friends-verifier
