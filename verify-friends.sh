@@ -17,7 +17,7 @@
 #
 ### Usage
 #
-#  /bin/bash ./verify-links.sh
+#  /bin/bash ./verify-friends.sh
 #
 ### Improvements to be made
 # - Output the actual problem if the response status code was 000 (see link
@@ -28,7 +28,7 @@
 #
 
 readonly SOURCE_FILE_URL="https://raw.githubusercontent.com/rust-lang/rust-www/master/_data/users.yml"
-readonly JOBS_COUNT=100
+readonly JOBS_COUNT=200
 
 # https://stackoverflow.com/questions/5014632/how-can-i-parse-a-yaml-file-from-a-linux-shell-script
 parse_yaml() {
@@ -51,14 +51,26 @@ parse_yaml() {
   }'
 }
 
-echo "Fetching source file.."
+echo "📥 Fetching source file.."
 readonly FRIENDS_FILE=$(mktemp)
 curl --silent "${SOURCE_FILE_URL}" > "$FRIENDS_FILE"
-echo "OK!"
 
-echo "Parsing URLs from file.."
+if [ ! -s ${FRIENDS_FILE} ]; then
+  echo "🚨 ERROR: Source file is empty. Exiting."
+  exit 1
+else
+  echo "📥 OK!"
+fi
+
+echo "🔬 Parsing URLs from file.."
 readonly URLS=$(parse_yaml "$FRIENDS_FILE")
-echo "OK!"
+
+if [ -z ${URLS} ]; then
+  echo "🚨 ERROR: No URLs found. Exiting."
+  exit 1
+else
+  echo "🔬 OK!"
+fi
 
 ### Convert file to array
 # https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
@@ -86,9 +98,9 @@ curl_for_status_code() {
 # Make function available for parallel
 export -f curl_for_status_code
 
-printf "Found [ %s ] URLs, cURLing them...\\n" "$(wc -l < "$RAW_URLS_FILE")"
+printf "⭐️ Found [ %s ] URLs, cURLing them...\\n" "$(wc -l < "$RAW_URLS_FILE")"
 
-URLS_WITH_STATUSES_FILE=$(mktemp)
+readonly URLS_WITH_STATUSES_FILE=$(mktemp)
 parallel --jobs $JOBS_COUNT curl_for_status_code < "$RAW_URLS_FILE" >> "$URLS_WITH_STATUSES_FILE"
 
 cat "$URLS_WITH_STATUSES_FILE" | while read RESULT
@@ -99,18 +111,17 @@ do
 
   case "$FIRST_DIGIT" in
     "2")
-      echo OK!
+      echo "✅ OK!"
       ;;
     "3" | "4" | "0")
-      printf "WARNING: URL [ %s ] responded with status code [ %d ], continuing..\\n" "$URL" "$STATUS_CODE"
+      printf "⚠️  WARNING: URL [ %s ] responded with status code [ %d ], continuing..\\n" "$URL" "$STATUS_CODE"
       ;;
     "5")
-      printf "ERROR: URL [ %s ] responded with status code [ %d ], aborting!\\n" "$URL" "$STATUS_CODE"
+      printf "🚨 ERROR: URL [ %s ] responded with status code [ %d ], aborting!\\n" "$URL" "$STATUS_CODE"
       exit 1
       ;;
     *)
-      printf "UNKNOWN STATUS CODE: URL [ %s ] responded with status code [ %d ], continuing..\\n" "$URL" "$STATUS_CODE"
-      echo "UNKNOWN"
+      printf "❔ UNKNOWN STATUS CODE: URL [ %s ] responded with status code [ %d ], continuing..\\n" "$URL" "$STATUS_CODE"
       ;;
   esac
 done
