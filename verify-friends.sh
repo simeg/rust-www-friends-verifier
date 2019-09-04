@@ -27,7 +27,7 @@
 # License: MIT
 #
 
-readonly SOURCE_FILE_URL="https://raw.githubusercontent.com/rust-lang/rust-www/master/_data/users.yml"
+readonly SOURCE_FILE_URL="https://raw.githubusercontent.com/rust-lang/www.rust-lang.org/master/src/data/users.yml"
 readonly JOBS_COUNT=200
 
 # https://stackoverflow.com/questions/5014632/how-can-i-parse-a-yaml-file-from-a-linux-shell-script
